@@ -1,0 +1,6 @@
+{
+  "name": "chatbot-carafa-api",
+  "version": "1.0.0",
+  "description": "Backend API for Chatbot Procedure Carafa",
+  "main": "index.js"
+}

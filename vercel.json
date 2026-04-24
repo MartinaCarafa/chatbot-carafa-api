@@ -1,0 +1,12 @@
+# Chatbot Carafa — Backend API
+
+Backend serverless per il chatbot procedure Carafa. Gestisce autenticazione Microsoft e ricerca documenti SharePoint.
+
+## Variabili d'ambiente richieste su Vercel
+
+| Variabile | Valore |
+|-----------|--------|
+| SP_TENANT_ID | 2d5a35b5-8aba-4607-af35-3d6d65cfb6e2 |
+| SP_CLIENT_ID | 2d1a092a-d4ff-4141-ba15-b7ecab532b52 |
+| SP_CLIENT_SECRET | (il tuo client secret) |
+| SP_SITE_URL | https://carafasm.sharepoint.com/sites/Processi |
