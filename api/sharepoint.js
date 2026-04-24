@@ -2,7 +2,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -10,7 +9,7 @@ export default async function handler(req, res) {
   const tenantId = process.env.SP_TENANT_ID;
   const clientId = process.env.SP_CLIENT_ID;
   const clientSecret = process.env.SP_CLIENT_SECRET;
-  const siteUrl = process.env.SP_SITE_URL || 'https://carafasm.sharepoint.com/sites/Processi';
+  const siteUrl = process.env.SP_SITE_URL || 'https://carafam.sharepoint.com/sites/Processi';
 
   if (!tenantId || !clientId || !clientSecret) {
     return res.status(500).json({ error: 'Credenziali server non configurate' });
@@ -30,14 +29,13 @@ export default async function handler(req, res) {
         }),
       }
     );
-
     const tokenData = await tokenResp.json();
     if (!tokenData.access_token) {
-      return res.status(401).json({ error: 'Autenticazione fallita', detail: tokenData.error_description });
+      return res.status(401).json({ error: 'Auth fallita', detail: tokenData.error_description });
     }
 
     const token = tokenData.access_token;
-    const headers = { Authorization: `Bearer ${token}` };
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     const siteHostname = new URL(siteUrl).hostname;
     const sitePath = new URL(siteUrl).pathname;
@@ -48,7 +46,7 @@ export default async function handler(req, res) {
     const siteData = await siteResp.json();
 
     if (!siteData.id) {
-      return res.status(404).json({ error: 'Sito SharePoint non trovato' });
+      return res.status(404).json({ error: 'Sito non trovato', url: siteUrl, detail: siteData });
     }
 
     if (action === 'search' && query) {
@@ -60,10 +58,7 @@ export default async function handler(req, res) {
       const results = (searchData.value || [])
         .filter(f => f.file)
         .slice(0, 5)
-        .map(f => ({
-          name: f.name,
-          webUrl: f.webUrl,
-        }));
+        .map(f => ({ name: f.name, webUrl: f.webUrl }));
       return res.status(200).json({ results });
     }
 
@@ -73,17 +68,15 @@ export default async function handler(req, res) {
         { headers }
       );
       const drivesData = await drivesResp.json();
-      const drives = drivesData.value || [];
       let allFiles = [];
-      for (const drive of drives) {
+      for (const drive of (drivesData.value || [])) {
         const filesResp = await fetch(
           `https://graph.microsoft.com/v1.0/drives/${drive.id}/root/children`,
           { headers }
         );
         const filesData = await filesResp.json();
         const files = (filesData.value || []).filter(f => f.file).map(f => ({
-          name: f.name,
-          webUrl: f.webUrl,
+          name: f.name, webUrl: f.webUrl
         }));
         allFiles = [...allFiles, ...files];
       }
