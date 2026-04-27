@@ -9,7 +9,9 @@ export default async function handler(req, res) {
   const tenantId = process.env.SP_TENANT_ID;
   const clientId = process.env.SP_CLIENT_ID;
   const clientSecret = process.env.SP_CLIENT_SECRET;
-  const siteUrl = process.env.SP_SITE_URL || 'https://carafam.sharepoint.com/sites/Processi';
+
+  // ID drive diretto — più affidabile dell'URL
+  const DRIVE_ID = 'b!wrAmm5nHaUeDvVDjtxu758A4Ys54CyBOibZXIDDljJ3I5_dKJW8BQ43YRdTYePmZ';
 
   if (!tenantId || !clientId || !clientSecret) {
     return res.status(500).json({ error: 'Credenziali server non configurate' });
@@ -35,23 +37,11 @@ export default async function handler(req, res) {
     }
 
     const token = tokenData.access_token;
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-    const siteHostname = new URL(siteUrl).hostname;
-    const sitePath = new URL(siteUrl).pathname;
-    const siteResp = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteHostname}:${sitePath}`,
-      { headers }
-    );
-    const siteData = await siteResp.json();
-
-    if (!siteData.id) {
-      return res.status(404).json({ error: 'Sito non trovato', url: siteUrl, detail: siteData });
-    }
+    const headers = { Authorization: `Bearer ${token}` };
 
     if (action === 'search' && query) {
       const searchResp = await fetch(
-        `https://graph.microsoft.com/v1.0/sites/${siteData.id}/drive/root/search(q='${encodeURIComponent(query)}')`,
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root/search(q='${encodeURIComponent(query)}')`,
         { headers }
       );
       const searchData = await searchResp.json();
@@ -63,24 +53,15 @@ export default async function handler(req, res) {
     }
 
     if (action === 'list') {
-      const drivesResp = await fetch(
-        `https://graph.microsoft.com/v1.0/sites/${siteData.id}/drives`,
+      const filesResp = await fetch(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root/children`,
         { headers }
       );
-      const drivesData = await drivesResp.json();
-      let allFiles = [];
-      for (const drive of (drivesData.value || [])) {
-        const filesResp = await fetch(
-          `https://graph.microsoft.com/v1.0/drives/${drive.id}/root/children`,
-          { headers }
-        );
-        const filesData = await filesResp.json();
-        const files = (filesData.value || []).filter(f => f.file).map(f => ({
-          name: f.name, webUrl: f.webUrl
-        }));
-        allFiles = [...allFiles, ...files];
-      }
-      return res.status(200).json({ files: allFiles });
+      const filesData = await filesResp.json();
+      const files = (filesData.value || []).filter(f => f.file).map(f => ({
+        name: f.name, webUrl: f.webUrl
+      }));
+      return res.status(200).json({ files });
     }
 
     return res.status(400).json({ error: 'Azione non valida' });
