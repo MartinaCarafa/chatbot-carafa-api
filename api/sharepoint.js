@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
     if (action === 'list') {
       const searchResp = await fetch(
-        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root/search(q='')`,
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root/search(q='rev')`,
         { headers }
       );
       const searchData = await searchResp.json();
