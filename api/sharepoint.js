@@ -9,8 +9,6 @@ export default async function handler(req, res) {
   const tenantId = process.env.SP_TENANT_ID;
   const clientId = process.env.SP_CLIENT_ID;
   const clientSecret = process.env.SP_CLIENT_SECRET;
-
-  // ID drive diretto — più affidabile dell'URL
   const DRIVE_ID = 'b!wrAmm5nHaUeDvVDjtxu758A4Ys54CyBOibZXIDDljJ3I5_dKJW8BQ43YRdTYePmZ';
 
   if (!tenantId || !clientId || !clientSecret) {
@@ -53,14 +51,14 @@ export default async function handler(req, res) {
     }
 
     if (action === 'list') {
-      const filesResp = await fetch(
-        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root/children`,
+      const searchResp = await fetch(
+        `https://graph.microsoft.com/v1.0/drives/${DRIVE_ID}/root/search(q='')`,
         { headers }
       );
-      const filesData = await filesResp.json();
-      const files = (filesData.value || []).filter(f => f.file).map(f => ({
-        name: f.name, webUrl: f.webUrl
-      }));
+      const searchData = await searchResp.json();
+      const files = (searchData.value || [])
+        .filter(f => f.file)
+        .map(f => ({ name: f.name, webUrl: f.webUrl }));
       return res.status(200).json({ files });
     }
 
